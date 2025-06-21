@@ -33,7 +33,7 @@ cell_value_formatted=("    " "  2 " "  4 " "  8 " " 16 " " 32 " " 64 " "128 " "2
 spawns=(1 1 1 1 2)
 win=0
 score=0
-modifiedLastMove=0
+movedLastMove=0
 cellValues=()
 cellModified=()
 
@@ -161,6 +161,7 @@ move() {
   local moveRCDelta="${move_rc_changes[$move]}"
   local rowDel=$(absolute $(get_row_delta $move))
   local colDel=$(absolute $(get_col_delta $move))
+  echo "$move -> $(get_row_delta $move), $(get_col_delta $move)"
   # repeat(size) {
   #     cells[row][column].move(move)
   #     row += move.columnChange.absoluteValue
@@ -168,13 +169,13 @@ move() {
   # }
   for ((i = 0; i < size; i++)); do
     move_cell $row $col $move
-    row=$((row + rowDel))
-    col=$((col + colDel))
+    row=$((row + colDel))
+    col=$((col + rowDel))
   done
   # if (anyMove) {
   #     spawn()
   # }
-  if ((modifiedLastMove == 1)); then
+  if ((movedLastMove == 1)); then
     spawn
   fi
   display_board
@@ -202,21 +203,61 @@ absolute() {
 get_row_delta() {
   local move=$1
   local moveRCDelta=${move_rc_changes[$move]}
-  echo $((moveRCDelta / 10 % 2))
+  echo $((moveRCDelta / 10 - 1))
 }
 
 get_col_delta() {
   local move=$1
   local moveRCDelta=${move_rc_changes[$move]}
-  echo $((moveRCDelta % 10 % 2))
+  echo $((moveRCDelta % 10 - 1))
 }
 
 move_cell() {
   local row=$1
   local col=$2
   local move=$3
-
-  echo "Moving cell at ($row, $col) in direction $move"
+  local rowDel=$(get_row_delta "$move")
+  local colDel=$(get_col_delta "$move")
+  local cell=$(get_value "$row" "$col")
+  if (( cell == -1 )); then
+    return
+  fi
+  local targetRow=$((row + rowDel))
+  local targetCol=$((col + colDel))
+  local target=$(get_value $targetRow $targetCol)
+  echo "Moving cell at ($row, $col) with value $cell to target ($targetRow, $targetCol) with value $target"
+  if (( target != -1 && cell != 0 )); then
+    # if (target.isEmpty) {
+    #     val targetRow = target.row
+    #     val targetCol = target.column
+    #     target.setCoordinates(this.row, this.column)
+    #     this.setCoordinates(targetRow, targetCol)
+    #     isMoved = true
+    #     move(move)
+    #     return
+    if (( "$target" == "0" )); then
+      # Move the cell to the empty target cell
+      set_value $targetRow $targetCol $cell
+#      set_modified $targetRow $targetCol $(get_modified $row $col)
+      set_value $row $col 0
+      movedLastMove=1
+      echo "Moved cell from ($row, $col) to ($targetRow, $targetCol)"
+      move_cell $targetRow $targetCol $move
+      return
+    elif (( target == cell && $(get_modified $targetRow $targetCol) == 0 )); then
+        set_value $targetRow $targetCol $((target + 1))
+        set_modified $targetRow $targetCol 1
+        set_value $row $col 0
+        movedLastMove=1
+    fi
+    # } else if (target.type == this.type && !target.isModified) {
+    #     target.type = CellType.forValue(this.value * 2)!!
+    #     target.isModified = true
+    #     this.type = CellType.C0
+    #     isMoved = true
+    # }
+  fi
+  move_cell $((row - rowDel)) $((col - colDel)) $move
 }
 
 check_lose() {
