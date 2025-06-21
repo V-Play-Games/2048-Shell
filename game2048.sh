@@ -30,7 +30,7 @@ move_rc=(
 # 2 -> +1
 
 cell_value_formatted=("    " "  1 " "  2 " "  4 " "  8 " " 16 " " 32 " " 64 " "128 " "256 " "512 " "1024" "2048")
-cell_multiplier_formatted=("    " " \033[32;1mx2\033[0m " " \033[31;1m/2\033[0m ")
+cell_multiplier_formatted=("    " "\033[32;1m x2 \033[0m" "\033[31;1m /2 \033[0m")
 spawns=(2 2 2 2 3)
 win=0
 score=0
@@ -270,8 +270,8 @@ move_cell() {
     if (( "$target" == "0" )); then
       get_multiplier $targetRow $targetCol
       case $? in
-        1) cell=$((cell + 1)); score=$((score + cell)) ;;
-        2) cell=$((cell - 1)); score=$((score + cell)) ;;
+        1) cell=$((cell + 1)); score=$((score + 2**cell)) ;;
+        2) cell=$((cell - 1)); score=$((score + 2**cell)) ;;
       esac
       set_multiplier $targetRow $targetCol 0
 
@@ -289,7 +289,7 @@ move_cell() {
         set_modified $targetRow $targetCol 1
         set_value $row $col 0
         movedLastMove=1
-        score=$((score + cell + 1))
+        score=$((score + 2**cell))
     fi
   fi
   move_cell $((row - rowDel)) $((col - colDel)) $move
@@ -351,7 +351,7 @@ echo -e "
 \033[101;1m╚══════╝ ╚═════╝      ╚═╝ ╚════╝ \033[0m
 
 Welcome to 2048!
-\033[1mChoose your difficulty\o33[0m
+\033[1mChoose your difficulty\033[0m
   \033[32;1m1. Easy  \033[0m (Classic 2048 (6x6), nothing new)
   \033[33;1m2. Hard  \033[0m (Some multiplier gremlins sprinkled in)
   \033[31;1m3. Expert\033[0m (Nah you ain't beating this one)"
@@ -369,7 +369,8 @@ for ((i = 0; i < size; i++)); do
   for ((j = 0; j < size; j++)); do
     set_value i j 0
     set_modified i j 0
-  done
+    set_multiplier $i $j 0
+done
 done
 spawn
 spawn
