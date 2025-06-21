@@ -40,44 +40,48 @@ cellModified=()
 get_index() {
   local row=$1
   local col=$2
-  echo $((row * size + col))
+  return $((row * size + col))
 }
 
 set_modified() {
-  cellModified[$(get_index $1 $2)]=$3
+  get_index $1 $2
+  cellModified[$?]=$3
 }
 
 get_modified() {
-  echo ${cellModified[$(get_index $1 $2)]}
+  get_index $1 $2
+  return ${cellModified[$?]}
 }
 
 set_value() {
   if (( $3 == 11 )); then
     win=1
   fi
-  cellValues[$(get_index $1 $2)]=$3
+  get_index $1 $2
+  cellValues[$?]=$3
 }
 
 get_value() {
   local row=$1
   local col=$2
   if (( row < 0 || row >= size || col < 0 || col >= size )); then
-    echo -1
+    return 255
   else
-    echo ${cellValues[$(get_index $row $col)]}
+    get_index $row $col
+    return ${cellValues[$?]}
   fi
 }
 
 get_row_delta() {
   local move=$1
   local moveRCDelta=${move_rc_changes[$move]}
-  echo $((moveRCDelta / 10 - 1))
+  return $((moveRCDelta / 10))
 }
 
 get_col_delta() {
   local move=$1
   local moveRCDelta=${move_rc_changes[$move]}
-  echo $((moveRCDelta % 10 - 1))
+  return $((moveRCDelta % 10))
 }
 
 end() {
@@ -107,7 +111,8 @@ spawn() {
   local empty_cells=()
   for ((i = 0; i < size; i++)); do
     for ((j = 0; j < size; j++)); do
-      if (( $(get_value $i $j) == 0 )); then
+      get_value $i $j
+      if (( $? == 0 )); then
         empty_cells+=("$i $j")
       fi
     done
@@ -121,13 +126,13 @@ spawn() {
 }
 
 display_board() {
-  printf "\r"
   boundary="+------+------+------+------+"
   echo "$boundary"
   for ((i = 0; i < size; i++)); do
     echo -n "| "
     for ((j = 0; j < size; j++)); do
-      echo -n "${cell_value_formatted[$(get_value $i $j)]} | "
+      get_value $i $j
+      echo -n "${cell_value_formatted[$?]} | "
     done
     echo -e ""
   done
@@ -155,9 +160,12 @@ move() {
   local col=$(((moveRC % 10) * (size - 1)))
 
   local moveRCDelta="${move_rc_changes[$move]}"
-  local rowDel=$(absolute $(get_row_delta $move))
-  local colDel=$(absolute $(get_col_delta $move))
-  echo -n "Thinking..."
+  get_row_delta $move
+  absolute $(($? - 1))
+  local rowDel=$?
+  get_col_delta $move
+  absolute $(($? - 1))
+  local colDel=$?
 
   for ((i = 0; i < size; i++)); do
     move_cell $row $col $move
@@ -168,12 +176,14 @@ move() {
   if ((movedLastMove == 1)); then
     spawn
   fi
+  movedLastMove=0
   for ((i = 0; i < size; i++)); do
     for ((j = 0; j < size; j++)); do
       set_modified $i $j 0
     done
   done
-  local lose=$(check_lose)
+  check_lose
+  local lose=$?
   display_board
   echo "Score: $score"
   if (( win == 1 )); then
@@ -190,9 +200,9 @@ move() {
 absolute() {
   local value=$1
   if (( value < 0 )); then
-    echo $(( -value ))
+    return $(( -value ))
   else
-    echo $value
+    return $value
   fi
 }
 
@@ -200,20 +210,26 @@ move_cell() {
   local row=$1
   local col=$2
   local move=$3
-  local rowDel=$(get_row_delta "$move")
-  local colDel=$(get_col_delta "$move")
-  local cell=$(get_value "$row" "$col")
-  if (( cell == -1 )); then
+  get_row_delta $move
+  local rowDel=$(($? - 1))
+  get_col_delta $move
+  local colDel=$(($? - 1))
+  get_value "$row" "$col"
+  local cell=$?
+  if (( cell == 255 )); then
     return
   fi
   local targetRow=$((row + rowDel))
   local targetCol=$((col + colDel))
-  local target=$(get_value $targetRow $targetCol)
-  if (( target != -1 && cell != 0 )); then
-    local targetModified=$(get_modified $targetRow $targetCol)
+  get_value $targetRow $targetCol
+  local target=$?
+  if (( target != 255 && cell != 0 )); then
+    get_modified $targetRow $targetCol
+    local targetModified=$?
 
     if (( "$target" == "0" )); then
-      local thisModified=$(get_modified $row $col)
+      get_modified $row $col
+      local thisModified=$?
       set_value $targetRow $targetCol $cell
       set_modified $targetRow $targetCol $thisModified
       set_value $row $col 0
@@ -235,40 +251,47 @@ check_move() {
   local row=$1
   local col=$2
   local value=$3
-  local target=$(get_value $row $col)
+  get_value $row $col
+  local target=$?
   if (( target == 0 || value == target )); then
-    echo 1
+    return 1
   else
-    echo 0
+    return 0
   fi
 }
 
 can_move() {
   local row=$1
   local col=$2
-  local cell=$(get_value $row $col)
+  get_value $row $col
+  local cell=$?
   # assume cell exists i.e. cell != -1
 
-  local up=$(check_move $((row + 1)) $col $cell)
-  local down=$(check_move $((row - 1)) $col $cell)
-  local left=$(check_move $row $((col + 1)) $cell)
-  local right=$(check_move $row $((col - 1)) $cell)
+  check_move $((row + 1)) $col $cell
+  local up=$?
+  check_move $((row - 1)) $col $cell
+  local down=$?
+  check_move $row $((col + 1)) $cell
+  local left=$?
+  check_move $row $((col - 1)) $cell
+  local right=$?
   if (( up == 1 || down == 1 || left == 1 || right == 1 )); then
-    echo 1
+    return 1
   else
-    echo 0
+    return 0
   fi
 }
 
 check_lose() {
   for ((i = 0; i < size; i++)); do
     for ((j = 0; j < size; j++)); do
-      if (( $(can_move $i $j) == 1 )); then
-        echo 0
+      can_move $i $j
+      if (( $? == 1 )); then
+        return 0
       fi
     done
   done
-  echo 1
+  return 1
 }
 
 read -r -p "Enter size of the board (default 4): " size
@@ -279,7 +302,6 @@ for ((i = 0; i < size; i++)); do
     set_modified i j 0
   done
 done
-echo -n "Wait..."
 spawn
 spawn
 help
