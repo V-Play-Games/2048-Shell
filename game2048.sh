@@ -137,18 +137,20 @@ spawn() {
   # shellcheck disable=SC2086
   set_value ${empty_cells[$random_index]} $value
 
-  for ((i = 0; i < size; i++)); do
-    for ((j = 0; j < size; j++)); do
-      set_multiplier $i $j 0
+  if (( difficulty == 2 )); then
+    for ((i = 0; i < size; i++)); do
+      for ((j = 0; j < size; j++)); do
+        set_multiplier $i $j 0
+      done
     done
-  done
+  fi
 
   if (( difficulty > 1 )); then
     local multiplier=${multiplierSpawns[$((RANDOM % ${#multiplierSpawns[@]}))]}
     local random_index_2=$((RANDOM % ${#empty_cells[@]}))
-      if (( random_index != random_index_2 )); then
-        set_multiplier ${empty_cells[$random_index_2]} $multiplier
-      fi
+    if (( random_index != random_index_2 )); then
+      set_multiplier ${empty_cells[$random_index_2]} $multiplier
+    fi
   fi
     set_multiplier ${empty_cells[$random_index]} 0
 }
@@ -360,7 +362,7 @@ if (( difficulty < 1 || difficulty > 3 )); then
 fi
 case $difficulty in
   1) size=6; multiplierSpawns=(0 0 0 0 0);;
-  2) size=6; multiplierSpawns=(0 0 0 1 2);;
+  2) size=4; multiplierSpawns=(0 0 0 1 2);;
   3) size=4; multiplierSpawns=(0 1 2 2 2);;
 esac
 for ((i = 0; i < size; i++)); do
