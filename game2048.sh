@@ -15,10 +15,9 @@ U to swipe up
 D to swipe down
 L to swipe left
 R to swipe right
-E to end the game
+Q to quit the game
 H for help"
-  echo -n "Enter size of the board (default 4): "
-  read -r size
+  read -r -p "Enter size of the board (default 4): " size
   echo "You chose a board of size $size x $size"
   for ((i = 0; i < size; i++)); do
     for ((j = 0; j < size; j++)); do
@@ -26,9 +25,41 @@ H for help"
     done
   done
 
+  echo -n "Wait..."
   spawn
   spawn
+  printf "\r"
+  echo "$help"
   display_board
+  playing=1
+  while [[ $playing == 1 ]]; do
+      read -r -p "Select an option: " choice
+
+      case $choice in
+          u|U)
+            up
+            ;;
+          d|D)
+            down
+            ;;
+          l|L)
+            left
+            ;;
+          r|R)
+            right
+            ;;
+          q|Q)
+            playing=0
+            ;;
+          h|H)
+            echo "$help"
+            ;;
+          *)
+            echo "Invalid option!"
+            ;;
+      esac
+  done
+  echo "Thanks for playing!"
 }
 
 spawn() {
