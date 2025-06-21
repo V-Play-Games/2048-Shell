@@ -37,7 +37,6 @@ move_rc=(
 cell_value_formatted=("    " "  2 " "  4 " "  8 " " 16 " " 32 " " 64 " "128 " "256 " "512 " "1024" "2048")
 spawns=(1 1 1 1 2)
 win=0
-lose=0
 score=0
 modifiedLastMove=0
 board=()
@@ -202,15 +201,13 @@ move() {
   if ((modifiedLastMove == 1)); then
     spawn
   fi
-  # lose = flatCells.none { it.canMove() }
-  check_lose
   display_board
   echo "Score: $score"
   if (( win == 1 )); then
     echo "You win!"
     end
   fi
-  if (( lose == 1 )); then
+  if (( $(check_lose) == 1 )); then
     echo "You lose!"
     end
   fi
@@ -236,7 +233,7 @@ move_cell() {
 
 check_lose() {
   # lose = flatCells.none { it.canMove() }
-  lose=0
+  echo 0
 }
 
 game2048
