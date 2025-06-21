@@ -37,12 +37,47 @@ movedLastMove=0
 cellValues=()
 cellModified=()
 
+get_index() {
+  local row=$1
+  local col=$2
+  echo $((row * size + col))
+}
+
 set_modified() {
   cellModified[$(get_index $1 $2)]=$3
 }
 
 get_modified() {
   echo ${cellModified[$(get_index $1 $2)]}
+}
+
+set_value() {
+  if (( $3 == 11 )); then
+    win=1
+  fi
+  cellValues[$(get_index $1 $2)]=$3
+}
+
+get_value() {
+  local row=$1
+  local col=$2
+  if (( row < 0 || row >= size || col < 0 || col >= size )); then
+    echo -1
+  else
+    echo ${cellValues[$(get_index $row $col)]}
+  fi
+}
+
+get_row_delta() {
+  local move=$1
+  local moveRCDelta=${move_rc_changes[$move]}
+  echo $((moveRCDelta / 10 - 1))
+}
+
+get_col_delta() {
+  local move=$1
+  local moveRCDelta=${move_rc_changes[$move]}
+  echo $((moveRCDelta % 10 - 1))
 }
 
 end() {
@@ -67,24 +102,6 @@ menu() {
   esac
 }
 
-game2048() {
-  read -r -p "Enter size of the board (default 4): " size
-  echo "You chose a board of size $size x $size"
-  for ((i = 0; i < size; i++)); do
-    for ((j = 0; j < size; j++)); do
-      set_value i j 0
-      set_modified i j 0
-    done
-  done
-
-  echo -n "Wait..."
-  spawn
-  spawn
-  help
-  display_board
-  menu
-}
-
 spawn() {
   local value=${spawns[$((RANDOM % ${#spawns[@]}))]}
   local empty_cells=()
@@ -101,29 +118,6 @@ spawn() {
   local random_index=$((RANDOM % ${#empty_cells[@]}))
   # shellcheck disable=SC2086
   set_value ${empty_cells[$random_index]} $value
-}
-
-get_index() {
-  local row=$1
-  local col=$2
-  echo $((row * size + col))
-}
-
-set_value() {
-  if (( $3 == 11 )); then
-    win=1
-  fi
-  cellValues[$(get_index $1 $2)]=$3
-}
-
-get_value() {
-  local row=$1
-  local col=$2
-  if (( row < 0 || row >= size || col < 0 || col >= size )); then
-    echo -1
-  else
-    echo ${cellValues[$(get_index $row $col)]}
-  fi
 }
 
 display_board() {
@@ -202,18 +196,6 @@ absolute() {
   fi
 }
 
-get_row_delta() {
-  local move=$1
-  local moveRCDelta=${move_rc_changes[$move]}
-  echo $((moveRCDelta / 10 - 1))
-}
-
-get_col_delta() {
-  local move=$1
-  local moveRCDelta=${move_rc_changes[$move]}
-  echo $((moveRCDelta % 10 - 1))
-}
-
 move_cell() {
   local row=$1
   local col=$2
@@ -249,15 +231,16 @@ move_cell() {
   move_cell $((row - rowDel)) $((col - colDel)) $move
 }
 
-check_lose() {
-  for ((i = 0; i < size; i++)); do
-    for ((j = 0; j < size; j++)); do
-      if (( $(can_move $i $j) == 1 )); then
-        echo 0
-      fi
-    done
-  done
-  echo 1
+check_move() {
+  local row=$1
+  local col=$2
+  local value=$3
+  local target=$(get_value $row $col)
+  if (( target == 0 || value == target )); then
+    echo 1
+  else
+    echo 0
+  fi
 }
 
 can_move() {
@@ -277,16 +260,28 @@ can_move() {
   fi
 }
 
-check_move() {
-  local row=$1
-  local col=$2
-  local value=$3
-  local target=$(get_value $row $col)
-  if (( target == 0 || value == target )); then
-    echo 1
-  else
-    echo 0
-  fi
+check_lose() {
+  for ((i = 0; i < size; i++)); do
+    for ((j = 0; j < size; j++)); do
+      if (( $(can_move $i $j) == 1 )); then
+        echo 0
+      fi
+    done
+  done
+  echo 1
 }
 
-game2048
+read -r -p "Enter size of the board (default 4): " size
+echo "You chose a board of size $size x $size"
+for ((i = 0; i < size; i++)); do
+  for ((j = 0; j < size; j++)); do
+    set_value i j 0
+    set_modified i j 0
+  done
+done
+echo -n "Wait..."
+spawn
+spawn
+help
+display_board
+menu
