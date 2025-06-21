@@ -1,22 +1,63 @@
-# Cell structure: ijvMm
-# i -> row
-# j -> column
-# v -> value
-# M -> moved (0 for no, 1 for yes)
-# m -> modified (0 for no, 1 for yes)
-
-cell_value_formatted=("    " "  2 " "  4 " "  8 " " 16 " " 32 " " 64 " "128 " "256 " "512 " "1024" "2048")
-spawns=(1 1 1 1 2)
-board=()
-
-game2048() {
-  help="Commands:
+help="Commands:
 U to swipe up
 D to swipe down
 L to swipe left
 R to swipe right
 Q to quit the game
 H for help"
+
+# Move Enum
+# 0 -> Up
+# 1 -> Down
+# 2 -> Left
+# 3 -> Right
+
+move_rc_changes=(
+  01 # Up
+  21 # Down
+  10 # Left
+  12 # Right
+)
+# 0 -> -1
+# 1 -> 0
+# 2 -> +1
+
+# Cell structure: iivMm
+# i -> row
+# i -> column
+# v -> value
+# M -> moved (0 for no, 1 for yes)
+# m -> modified (0 for no, 1 for yes)
+
+cell_value_formatted=("    " "  2 " "  4 " "  8 " " 16 " " 32 " " 64 " "128 " "256 " "512 " "1024" "2048")
+spawns=(1 1 1 1 2)
+win=0
+lose=0
+score=0
+board=()
+
+end() {
+  echo "Thanks for playing!"
+}
+
+help() {
+  echo "$help"
+}
+
+menu() {
+  read -r -p "Select an option: " choice
+  case $choice in
+    u|U) up ;;
+    d|D) down ;;
+    l|L) left ;;
+    r|R) right ;;
+    q|Q) end ;;
+    h|H) help; menu ;;
+    *) echo "Invalid option!"; menu ;;
+  esac
+}
+
+game2048() {
   read -r -p "Enter size of the board (default 4): " size
   echo "You chose a board of size $size x $size"
   for ((i = 0; i < size; i++)); do
@@ -29,37 +70,9 @@ H for help"
   spawn
   spawn
   printf "\r"
-  echo "$help"
+  help
   display_board
-  playing=1
-  while [[ $playing == 1 ]]; do
-      read -r -p "Select an option: " choice
-
-      case $choice in
-          u|U)
-            up
-            ;;
-          d|D)
-            down
-            ;;
-          l|L)
-            left
-            ;;
-          r|R)
-            right
-            ;;
-          q|Q)
-            playing=0
-            ;;
-          h|H)
-            echo "$help"
-            ;;
-          *)
-            echo "Invalid option!"
-            ;;
-      esac
-  done
-  echo "Thanks for playing!"
+  menu
 }
 
 spawn() {
@@ -140,6 +153,35 @@ display_board() {
     echo -e ""
   done
   echo "$boundary"
+}
+
+up() {
+  move 0
+}
+down() {
+  move 1
+}
+left() {
+  move 2
+}
+right() {
+  move 3
+}
+
+move() {
+  local move_direction=$1
+  echo "Moving ${move_direction}..."
+  display_board
+  echo "Score: $score"
+  if [[ $win == 1 ]]; then
+    echo "You win!"
+    end
+  fi
+  if [[ $lose == 1 ]]; then
+    echo "You lose!"
+    end
+  fi
+  menu
 }
 
 game2048
