@@ -80,7 +80,6 @@ game2048() {
   echo -n "Wait..."
   spawn
   spawn
-  printf "\r"
   help
   display_board
   menu
@@ -125,6 +124,7 @@ get_value() {
 }
 
 display_board() {
+  printf "\r"
   boundary="+------+------+------+------+"
   echo "$boundary"
   for ((i = 0; i < size; i++)); do
@@ -161,7 +161,7 @@ move() {
   local moveRCDelta="${move_rc_changes[$move]}"
   local rowDel=$(absolute $(get_row_delta $move))
   local colDel=$(absolute $(get_col_delta $move))
-  echo "$move -> $(get_row_delta $move), $(get_col_delta $move)"
+  echo -n "Thinking..."
   # repeat(size) {
   #     cells[row][column].move(move)
   #     row += move.columnChange.absoluteValue
@@ -178,6 +178,11 @@ move() {
   if ((movedLastMove == 1)); then
     spawn
   fi
+  for ((i = 0; i < size; i++)); do
+    for ((j = 0; j < size; j++)); do
+      set_modified $i $j 0
+    done
+  done
   display_board
   echo "Score: $score"
   if (( win == 1 )); then
@@ -225,7 +230,6 @@ move_cell() {
   local targetRow=$((row + rowDel))
   local targetCol=$((col + colDel))
   local target=$(get_value $targetRow $targetCol)
-  echo "Moving cell at ($row, $col) with value $cell to target ($targetRow, $targetCol) with value $target"
   if (( target != -1 && cell != 0 )); then
     # if (target.isEmpty) {
     #     val targetRow = target.row
@@ -237,11 +241,13 @@ move_cell() {
     #     return
     if (( "$target" == "0" )); then
       # Move the cell to the empty target cell
+      local targetModified=$(get_modified $targetRow $targetCol)
+      local thisModified=$(get_modified $row $col)
       set_value $targetRow $targetCol $cell
-#      set_modified $targetRow $targetCol $(get_modified $row $col)
+      set_modified $targetRow $targetCol $thisModified
       set_value $row $col 0
+      set_modified $row $col $targetModified
       movedLastMove=1
-      echo "Moved cell from ($row, $col) to ($targetRow, $targetCol)"
       move_cell $targetRow $targetCol $move
       return
     elif (( target == cell && $(get_modified $targetRow $targetCol) == 0 )); then
