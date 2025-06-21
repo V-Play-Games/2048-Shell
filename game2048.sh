@@ -1,8 +1,8 @@
 help="Commands:
-U to swipe up
-D to swipe down
-L to swipe left
-R to swipe right
+W to swipe up
+A to swipe down
+S to swipe left
+D to swipe right
 Q to quit the game
 H for help"
 
@@ -96,10 +96,10 @@ help() {
 menu() {
   read -r -p "Select an option: " choice
   case $choice in
-    u|U) up ;;
-    d|D) down ;;
-    l|L) left ;;
-    r|R) right ;;
+    w|W) up ;;
+    a|A) down ;;
+    s|S) left ;;
+    d|D) right ;;
     q|Q) end ;;
     h|H) help; menu ;;
     *) echo "Invalid option!"; menu ;;
