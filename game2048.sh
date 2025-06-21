@@ -110,6 +110,9 @@ get_index() {
 }
 
 set_value() {
+  if (( $3 == 11 )); then
+    win=1
+  fi
   cellValues[$(get_index $1 $2)]=$3
 }
 
@@ -183,13 +186,14 @@ move() {
       set_modified $i $j 0
     done
   done
+  local lose=$(check_lose)
   display_board
   echo "Score: $score"
   if (( win == 1 )); then
     echo "You win!"
     end
   fi
-  if (( $(check_lose) == 1 )); then
+  if (( lose == 1 )); then
     echo "You lose!"
     end
   fi
@@ -231,6 +235,7 @@ move_cell() {
   local targetCol=$((col + colDel))
   local target=$(get_value $targetRow $targetCol)
   if (( target != -1 && cell != 0 )); then
+    local targetModified=$(get_modified $targetRow $targetCol)
     # if (target.isEmpty) {
     #     val targetRow = target.row
     #     val targetCol = target.column
@@ -241,7 +246,6 @@ move_cell() {
     #     return
     if (( "$target" == "0" )); then
       # Move the cell to the empty target cell
-      local targetModified=$(get_modified $targetRow $targetCol)
       local thisModified=$(get_modified $row $col)
       set_value $targetRow $targetCol $cell
       set_modified $targetRow $targetCol $thisModified
@@ -250,7 +254,7 @@ move_cell() {
       movedLastMove=1
       move_cell $targetRow $targetCol $move
       return
-    elif (( target == cell && $(get_modified $targetRow $targetCol) == 0 )); then
+    elif (( target == cell && targetModified == 0 )); then
         set_value $targetRow $targetCol $((target + 1))
         set_modified $targetRow $targetCol 1
         set_value $row $col 0
@@ -268,7 +272,50 @@ move_cell() {
 
 check_lose() {
   # lose = flatCells.none { it.canMove() }
-  echo 0
+  for ((i = 0; i < size; i++)); do
+    for ((j = 0; j < size; j++)); do
+      if (( $(can_move $i $j) == 1 )); then
+        echo 0
+      fi
+    done
+  done
+  echo 1
+}
+
+# fun canMove() = checkMove(row + 1, column) ||
+#         checkMove(row - 1, column) ||
+#         checkMove(row, column + 1) ||
+#         checkMove(row, column - 1)
+can_move() {
+  local row=$1
+  local col=$2
+  local cell=$(get_value $row $col)
+  # assume cell exists i.e. cell != -1
+
+  local up=$(check_move $((row + 1)) $col $cell)
+  local down=$(check_move $((row - 1)) $col $cell)
+  local left=$(check_move $row $((col + 1)) $cell)
+  local right=$(check_move $row $((col - 1)) $cell)
+  if (( up == 1 || down == 1 || left == 1 || right == 1 )); then
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+# private fun checkMove(r: Int, c: Int) = cell(r, c)?.let { target ->
+#     target.isEmpty || this.type == target.type
+# } == true
+check_move() {
+  local row=$1
+  local col=$2
+  local value=$3
+  local target=$(get_value $row $col)
+  if (( target == 0 || value == target )); then
+    echo 1
+  else
+    echo 0
+  fi
 }
 
 game2048
