@@ -156,8 +156,7 @@ right() {
 move() {
   local move=$1
   local moveRC=${move_rc[$move]}
-  # var row = move.row * (size - 1)
-  # var column = move.column * (size - 1)
+
   local row=$(((moveRC / 10) * (size - 1)))
   local col=$(((moveRC % 10) * (size - 1)))
 
@@ -165,19 +164,13 @@ move() {
   local rowDel=$(absolute $(get_row_delta $move))
   local colDel=$(absolute $(get_col_delta $move))
   echo -n "Thinking..."
-  # repeat(size) {
-  #     cells[row][column].move(move)
-  #     row += move.columnChange.absoluteValue
-  #     column += move.rowChange.absoluteValue
-  # }
+
   for ((i = 0; i < size; i++)); do
     move_cell $row $col $move
     row=$((row + colDel))
     col=$((col + rowDel))
   done
-  # if (anyMove) {
-  #     spawn()
-  # }
+
   if ((movedLastMove == 1)); then
     spawn
   fi
@@ -236,16 +229,8 @@ move_cell() {
   local target=$(get_value $targetRow $targetCol)
   if (( target != -1 && cell != 0 )); then
     local targetModified=$(get_modified $targetRow $targetCol)
-    # if (target.isEmpty) {
-    #     val targetRow = target.row
-    #     val targetCol = target.column
-    #     target.setCoordinates(this.row, this.column)
-    #     this.setCoordinates(targetRow, targetCol)
-    #     isMoved = true
-    #     move(move)
-    #     return
+
     if (( "$target" == "0" )); then
-      # Move the cell to the empty target cell
       local thisModified=$(get_modified $row $col)
       set_value $targetRow $targetCol $cell
       set_modified $targetRow $targetCol $thisModified
@@ -260,18 +245,11 @@ move_cell() {
         set_value $row $col 0
         movedLastMove=1
     fi
-    # } else if (target.type == this.type && !target.isModified) {
-    #     target.type = CellType.forValue(this.value * 2)!!
-    #     target.isModified = true
-    #     this.type = CellType.C0
-    #     isMoved = true
-    # }
   fi
   move_cell $((row - rowDel)) $((col - colDel)) $move
 }
 
 check_lose() {
-  # lose = flatCells.none { it.canMove() }
   for ((i = 0; i < size; i++)); do
     for ((j = 0; j < size; j++)); do
       if (( $(can_move $i $j) == 1 )); then
@@ -282,10 +260,6 @@ check_lose() {
   echo 1
 }
 
-# fun canMove() = checkMove(row + 1, column) ||
-#         checkMove(row - 1, column) ||
-#         checkMove(row, column + 1) ||
-#         checkMove(row, column - 1)
 can_move() {
   local row=$1
   local col=$2
@@ -303,9 +277,6 @@ can_move() {
   fi
 }
 
-# private fun checkMove(r: Int, c: Int) = cell(r, c)?.let { target ->
-#     target.isEmpty || this.type == target.type
-# } == true
 check_move() {
   local row=$1
   local col=$2
