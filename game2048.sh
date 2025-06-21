@@ -1,7 +1,7 @@
 help="Commands:
 W to swipe up
-A to swipe down
-S to swipe left
+A to swipe left
+S to swipe down
 D to swipe right
 Q to quit the game
 H for help"
@@ -29,13 +29,16 @@ move_rc=(
 # 1 -> 0
 # 2 -> +1
 
-cell_value_formatted=("    " "  2 " "  4 " "  8 " " 16 " " 32 " " 64 " "128 " "256 " "512 " "1024" "2048")
-spawns=(1 1 1 1 2)
+cell_value_formatted=("    " "  1 " "  2 " "  4 " "  8 " " 16 " " 32 " " 64 " "128 " "256 " "512 " "1024" "2048")
+cell_multiplier_formatted=("    " " \033[32;1mx2\033[0m " " \033[31;1m/2\033[0m ")
+spawns=(2 2 2 2 3)
 win=0
 score=0
 movedLastMove=0
+difficulty=0
 cellValues=()
 cellModified=()
+cellMultiplier=()
 
 get_index() {
   local row=$1
@@ -53,8 +56,18 @@ get_modified() {
   return ${cellModified[$?]}
 }
 
+set_multiplier() {
+  get_index $1 $2
+  cellMultiplier[$?]=$3
+}
+
+get_multiplier() {
+  get_index $1 $2
+  return ${cellMultiplier[$?]}
+}
+
 set_value() {
-  if (( $3 == 11 )); then
+  if (( $3 == 12 )); then
     win=1
   fi
   get_index $1 $2
@@ -97,8 +110,8 @@ menu() {
   read -r -p "Select an option: " choice
   case $choice in
     w|W) up ;;
-    a|A) down ;;
-    s|S) left ;;
+    a|A) left ;;
+    s|S) down ;;
     d|D) right ;;
     q|Q) end ;;
     h|H) help; menu ;;
@@ -123,16 +136,41 @@ spawn() {
   local random_index=$((RANDOM % ${#empty_cells[@]}))
   # shellcheck disable=SC2086
   set_value ${empty_cells[$random_index]} $value
+
+  for ((i = 0; i < size; i++)); do
+    for ((j = 0; j < size; j++)); do
+      set_multiplier $i $j 0
+    done
+  done
+
+  if (( difficulty > 1 )); then
+    local multiplier=${multiplierSpawns[$((RANDOM % ${#multiplierSpawns[@]}))]}
+    local random_index_2=$((RANDOM % ${#empty_cells[@]}))
+      if (( random_index != random_index_2 )); then
+        set_multiplier ${empty_cells[$random_index_2]} $multiplier
+      fi
+  fi
+    set_multiplier ${empty_cells[$random_index]} 0
 }
 
 display_board() {
-  boundary="+------+------+------+------+"
+  local boundary="+"
+  local fragment="------+"
+  for ((i = 0; i < size; i++)); do
+    boundary+="$fragment"
+  done
   echo "$boundary"
   for ((i = 0; i < size; i++)); do
     echo -n "| "
     for ((j = 0; j < size; j++)); do
       get_value $i $j
-      echo -n "${cell_value_formatted[$?]} | "
+      local value=$?
+      if (( value == 0 )); then
+        get_multiplier $i $j
+        echo -n -e "${cell_multiplier_formatted[$?]} | "
+      else
+        echo -n -e "${cell_value_formatted[$value]} | "
+      fi
     done
     echo -e ""
   done
@@ -228,6 +266,13 @@ move_cell() {
     local targetModified=$?
 
     if (( "$target" == "0" )); then
+      get_multiplier $targetRow $targetCol
+      case $? in
+        1) cell=$((cell + 1)); score=$((score + cell)) ;;
+        2) cell=$((cell - 1)); score=$((score + cell)) ;;
+      esac
+      set_multiplier $targetRow $targetCol 0
+
       get_modified $row $col
       local thisModified=$?
       set_value $targetRow $targetCol $cell
@@ -242,6 +287,7 @@ move_cell() {
         set_modified $targetRow $targetCol 1
         set_value $row $col 0
         movedLastMove=1
+        score=$((score + cell + 1))
     fi
   fi
   move_cell $((row - rowDel)) $((col - colDel)) $move
@@ -294,8 +340,29 @@ check_lose() {
   return 1
 }
 
-read -r -p "Enter size of the board (default 4): " size
-echo "You chose a board of size $size x $size"
+echo -e "
+\033[101;1m██████╗  ██████╗ ██╗  ██╗ █████╗ \033[0m
+\033[101;1m╚════██╗██╔═████╗██║  ██║██╔══██╗\033[0m
+\033[101;1m █████╔╝██║██╔██║███████║╚█████╔╝\033[0m
+\033[101;1m██╔═══╝ ████╔╝██║╚════██║██╔══██╗\033[0m
+\033[101;1m███████╗╚██████╔╝     ██║╚█████╔╝\033[0m
+\033[101;1m╚══════╝ ╚═════╝      ╚═╝ ╚════╝ \033[0m
+
+Welcome to 2048!
+\033[1mChoose your difficulty\o33[0m
+  \033[32;1m1. Easy  \033[0m (Classic 2048 (6x6), nothing new)
+  \033[33;1m2. Hard  \033[0m (Some multiplier gremlins sprinkled in)
+  \033[31;1m3. Expert\033[0m (Nah you ain't beating this one)"
+read -r -p "Enter difficulty (1, 2, or 3): " difficulty
+if (( difficulty < 1 || difficulty > 3 )); then
+  echo "Invalid difficulty! Defaulting to 1."
+  difficulty=1
+fi
+case $difficulty in
+  1) size=6; multiplierSpawns=(0 0 0 0 0);;
+  2) size=6; multiplierSpawns=(0 0 0 1 2);;
+  3) size=4; multiplierSpawns=(0 1 2 2 2);;
+esac
 for ((i = 0; i < size; i++)); do
   for ((j = 0; j < size; j++)); do
     set_value i j 0
