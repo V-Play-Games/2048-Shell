@@ -126,7 +126,10 @@ spawn() {
     for ((j = 0; j < size; j++)); do
       get_value $i $j
       if (( $? == 0 )); then
-        empty_cells+=("$i $j")
+        get_multiplier $i $j
+        if (( $? == 0 )); then
+          empty_cells+=("$i $j")
+        fi
       fi
     done
   done
