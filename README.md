@@ -1,5 +1,5 @@
 # 2048: Endgame
-A simple implementation of the classic 2048 game, playable directly in your terminal using a Bash shell script.
+**2048: Endgame** - Bash Your Way Through Multipliers, Dividers, and the Forbidden 1!
 
 ## Features
 - Play 2048 in your terminal with simple keyboard commands.
