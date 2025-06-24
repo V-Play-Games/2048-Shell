@@ -1,4 +1,4 @@
-# 2048-Shell
+# 2048: Endgame
 A simple implementation of the classic 2048 game, playable directly in your terminal using a Bash shell script.
 
 ## Features
@@ -21,7 +21,7 @@ This is a new feature that adds a twist to the classic game. In addition to the 
 These multipliers can appear randomly on the board anytime.
 
 - **Hard Difficulty**: Only 1 multiplier per at a time, and it goes away after the current turn.
-- **Expert Difficulty**: More than 1 multipliers can be on the board at the same time, and they stay until they are used.
+- **Expert Difficulty**: More than 1 multiplier can be on the board at the same time, and they stay until they are used.
 
 Note: Multipliers don't change their position on the board, they just modify the tile going through them.
 
@@ -43,9 +43,9 @@ Note: Multipliers don't change their position on the board, they just modify the
    bash game2048.sh
    ```
 4. Choose the difficulty level:
-   - `1` for Easy
-   - `2` for Hard
-   - `3` for Expert
+   - `1` for Survivor Mode (Easy)
+   - `2` for Doom Mode (Hard)
+   - `3` for Endgame Mode (Expert)
 5. Use the following commands to play:
    - `W` - Swipe Up
    - `A` - Swipe Down
@@ -56,7 +56,7 @@ Note: Multipliers don't change their position on the board, they just modify the
 
 ## Screenshots
 <div align="center">
-<img src="https://hc-cdn.hel1.your-objectstorage.com/s/v3/4f2c2e82bd3a6940fd71ea980771829d22cdbb32_image.png" alt="Header">
+<img src="https://hc-cdn.hel1.your-objectstorage.com/s/v3/aba41d3f1508c6f73b7e80bb95a52d07bfcf33cc_image.png" alt="Header">
 
 <b>Header</b>
 

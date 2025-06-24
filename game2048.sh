@@ -343,11 +343,18 @@ echo -e "
 \033[101;1m███████╗╚██████╔╝     ██║╚█████╔╝\033[0m
 \033[101;1m╚══════╝ ╚═════╝      ╚═╝ ╚════╝ \033[0m
 
-Welcome to 2048!
+Welcome to 2048: Endgame!
+
+Where Every Move Risks Multipliers,
+Dividers, and the Dreaded Forbidden 1.
+
 \033[1mChoose your difficulty\033[0m
-  \033[32;1m1. Easy  \033[0m (Classic 2048 (6x6), nothing new)
-  \033[33;1m2. Hard  \033[0m (Some multiplier gremlins sprinkled in)
-  \033[31;1m3. Expert\033[0m (Nah you ain't beating this one)"
+  \033[32;1m1. Survivor Mode \033[32;3;2m(Easy)\033[0m
+     6x6 Grid | Classic Play
+  \033[33;1m2. Doom Mode     \033[33;3;2m(Hard)\033[0m
+     4x4 Grid | 20% x2 | 20% /2
+  \033[31;1m3. Endgame Mode  \033[31;3;2m(Expert)\033[0m
+     4x4 Grid | 60% /2 | 20% x2"
 read -r -p "Enter difficulty (1, 2, or 3): " difficulty
 if (( difficulty < 1 || difficulty > 3 )); then
   echo "Invalid difficulty! Defaulting to 1."
