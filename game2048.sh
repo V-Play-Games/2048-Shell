@@ -41,9 +41,7 @@ cellModified=()
 cellMultiplier=()
 
 get_index() {
-  local row=$1
-  local col=$2
-  return $((row * size + col))
+  return $(($1 * size + $2))
 }
 
 set_modified() {
@@ -86,15 +84,11 @@ get_value() {
 }
 
 get_row_delta() {
-  local move=$1
-  local moveRCDelta=${move_rc_changes[$move]}
-  return $((moveRCDelta / 10))
+  return $((${move_rc_changes[$1]} / 10))
 }
 
 get_col_delta() {
-  local move=$1
-  local moveRCDelta=${move_rc_changes[$move]}
-  return $((moveRCDelta % 10))
+  return $((${move_rc_changes[$1]} % 10))
 }
 
 end() {
@@ -120,14 +114,12 @@ menu() {
 }
 
 spawn() {
-  local value=${spawns[$((RANDOM % ${#spawns[@]}))]}
+  local spawn=${spawns[$((RANDOM % ${#spawns[@]}))]}
   local empty_cells=()
   for ((i = 0; i < size; i++)); do
     for ((j = 0; j < size; j++)); do
-      get_value $i $j
-      if (( $? == 0 )); then
-        get_multiplier $i $j
-        if (( $? == 0 )); then
+      if get_value $i $j; then
+        if get_multiplier $i $j; then
           empty_cells+=("$i $j")
         fi
       fi
@@ -137,8 +129,8 @@ spawn() {
       return
   fi
   local random_index=$((RANDOM % ${#empty_cells[@]}))
-  # shellcheck disable=SC2086
-  set_value ${empty_cells[$random_index]} $value
+  set_value ${empty_cells[$random_index]} $spawn
+  set_multiplier ${empty_cells[$random_index]} 0
 
   if (( difficulty == 2 )); then
     for ((i = 0; i < size; i++)); do
@@ -155,7 +147,6 @@ spawn() {
       set_multiplier ${empty_cells[$random_index_2]} $multiplier
     fi
   fi
-    set_multiplier ${empty_cells[$random_index]} 0
 }
 
 display_board() {
@@ -185,12 +176,15 @@ display_board() {
 up() {
   move 0
 }
+
 down() {
   move 1
 }
+
 left() {
   move 2
 }
+
 right() {
   move 3
 }
@@ -202,7 +196,6 @@ move() {
   local row=$(((moveRC / 10) * (size - 1)))
   local col=$(((moveRC % 10) * (size - 1)))
 
-  local moveRCDelta="${move_rc_changes[$move]}"
   get_row_delta $move
   absolute $(($? - 1))
   local rowDel=$?
@@ -218,22 +211,20 @@ move() {
 
   if ((movedLastMove == 1)); then
     spawn
+    movedLastMove=0
   fi
-  movedLastMove=0
   for ((i = 0; i < size; i++)); do
     for ((j = 0; j < size; j++)); do
       set_modified $i $j 0
     done
   done
-  check_lose
-  local lose=$?
   display_board
   echo "Score: $score"
   if (( win == 1 )); then
     echo "You win!"
     end
   fi
-  if (( lose == 1 )); then
+  if check_lose; then
     echo "You lose!"
     end
   fi
@@ -257,7 +248,7 @@ move_cell() {
   local rowDel=$(($? - 1))
   get_col_delta $move
   local colDel=$(($? - 1))
-  get_value "$row" "$col"
+  get_value $row $col
   local cell=$?
   if (( cell == 255 )); then
     return
@@ -327,22 +318,21 @@ can_move() {
   check_move $row $((col - 1)) $cell
   local right=$?
   if (( up == 1 || down == 1 || left == 1 || right == 1 )); then
-    return 1
-  else
     return 0
+  else
+    return 1
   fi
 }
 
 check_lose() {
   for ((i = 0; i < size; i++)); do
     for ((j = 0; j < size; j++)); do
-      can_move $i $j
-      if (( $? == 1 )); then
-        return 0
+      if can_move $i $j; then
+        return 1
       fi
     done
   done
-  return 1
+  return 0
 }
 
 echo -e "
@@ -373,7 +363,7 @@ for ((i = 0; i < size; i++)); do
     set_value i j 0
     set_modified i j 0
     set_multiplier $i $j 0
-done
+  done
 done
 spawn
 spawn
